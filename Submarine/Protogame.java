@@ -23,6 +23,16 @@ public class Protogame extends JFrame implements KeyListener
     // create a bunch of mine Sprites
     ArrayList<Sprite> mineList = new ArrayList<Sprite>();
     
+    // create a bunch of bullet Sprites
+    ArrayList<Sprite> bulletList = new ArrayList<Sprite>();
+    
+    // Constants for screen size
+    int WIDTH = 640;
+    int HEIGHT = 480;
+    
+    // Global score variable
+    int score = 0;
+    
     // initialize : () -> void
     //  sets up parameters for the appearance of the window.
     //  also initialize any other variables we might need.
@@ -32,7 +42,7 @@ public class Protogame extends JFrame implements KeyListener
         setLocation(0,0);
 
         // width and height of window
-        setSize(640,480);
+        setSize(WIDTH,HEIGHT);
 
         // text that goes in title bar
         setTitle("Sean and Mik's Game With Blue Stuff!");
@@ -43,7 +53,7 @@ public class Protogame extends JFrame implements KeyListener
         // run System.exit(0) when the "X" button is clicled in the JFrame
         setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         
-        layout = new BufferedImage(640,480, BufferedImage.TYPE_INT_RGB);
+        layout = new BufferedImage(WIDTH,HEIGHT, BufferedImage.TYPE_INT_RGB);
         grapher = layout.createGraphics();
 
         background = new Sprite();
@@ -55,8 +65,6 @@ public class Protogame extends JFrame implements KeyListener
         submarine.setImage("submarine.png");
         submarine.setVelocity(50,0); // pixels per second.
         submarine.setAngle(2);
-
-        
         
         for (int i = 0; i < 10; i++)
         {
@@ -73,13 +81,16 @@ public class Protogame extends JFrame implements KeyListener
         int x = randy.nextInt(620);
         int y = randy.nextInt(460);
         mine.setPosition(x,y);
-        mineList.add(mine);
+        if (!mine.overlaps(submarine))
+            mineList.add(mine);
+        else
+            spawnMine();
     }
     // loop : () -> void
     //  repeats update (event sheet) and render (layout) methods
     public void loop()
     {
-        while (true)
+        while (!submarine.destroyed)
         {
             // wait for 17 milliseconds
             try
@@ -111,16 +122,30 @@ public class Protogame extends JFrame implements KeyListener
             submarine.addAngle( 3.0 );
 
         submarine.update( 0.017 );
-        submarine.wrap(640,480);
-        
-        for (Sprite mine : mineList)
-        {
-            mine.update(0.017);
-            
-            if (mine.overlaps(submarine))
-                mine.destroyed = true;
+        submarine.wrap(WIDTH,HEIGHT);
+       
+        try{
+            for (Sprite mine : mineList)
+            {
+                mine.wrap(WIDTH,HEIGHT);
+                //for (Sprite bullet : bulletList){
+                for (Sprite bullet : bulletList){
+                    bullet.update(0.017);
+                    if (bullet.overlaps(mine)){
+                        mine.destroyed = true;
+                        bullet.destroyed = true;
+                    }
+                }
+                mine.update(0.017);
+                
+                if (mine.overlaps(submarine)){
+                    mine.destroyed = true;
+                    submarine.destroyed = true;
+                }
+            }
         }
-        
+        catch (Exception ConcurrentModificationException){
+        }
         // when removing items from a list,
         //  need to go through list backwards because the items
         //  automatically reposition themselves when something is removed
@@ -131,21 +156,40 @@ public class Protogame extends JFrame implements KeyListener
                 mineList.remove(n);
                 spawnMine();
             }
-        }  
+        }
+        
+        for (int n = bulletList.size() - 1; n >= 0; n -= 1)
+        {
+            if ( bulletList.get(n).destroyed ){ 
+                bulletList.remove(n);
+                score += 100;
+            }
+        }
     }
 
     // draw shapes/text/images/etc. onto layout
     public void render()
     {
         background.render(grapher);
+        Font stylish = new Font("Times New Roman", Font.BOLD, 30);
+        grapher.setFont( stylish );
+        
+        String score_message = "Score: " + score;
+        grapher.drawString(score_message, 20, 60);
 
         for (Sprite mine : mineList)
-        {
             mine.render(grapher);
-        }
         
-        submarine.render(grapher);
-
+        for (int n = 0; n < bulletList.size(); n++)
+            bulletList.get(n).render(grapher);
+        
+        if (submarine.destroyed){
+            String message = "You hit a mine!";       
+            grapher.drawString(message, 200, 240);
+        }
+        else
+            submarine.render(grapher);
+            
         // calls paint method at next available opportunity
         repaint();
     }
@@ -161,14 +205,27 @@ public class Protogame extends JFrame implements KeyListener
 
     public void keyPressed(KeyEvent e)
     {
-        // extract key code from key event object
-        int i = e.getKeyCode();
-        Integer I = new Integer(i);
-        // avoids duplicates in list
-        if ( activeKeys.contains(I) )
-            return;
-        else
-            activeKeys.add(I);
+        if (!submarine.destroyed){    
+            // extract key code from key event object
+            int i = e.getKeyCode();
+            Integer I = new Integer(i);
+            // avoids duplicates in list
+            if ( !activeKeys.contains(I) )
+                activeKeys.add(I);
+        
+            if (i == KeyEvent.VK_SPACE )
+            {
+                Sprite bullet = new Sprite();
+                bullet.setImage("torpedo.png");
+                bullet.setPosition( 
+                    submarine.position.x + submarine.image.getWidth(null)/2 - bullet.image.getWidth(null)/2, 
+                    submarine.position.y + submarine.image.getHeight(null)/2 - bullet.image.getHeight(null)/2
+                );
+                bullet.setAngle( submarine.angle );
+                bullet.setSpeed( 100 );
+                bulletList.add(bullet);
+            }  
+        }
     }
 
     public void keyReleased(KeyEvent e)
@@ -187,8 +244,4 @@ public class Protogame extends JFrame implements KeyListener
     {
 
     }
-
-    
-    
-    
 }
