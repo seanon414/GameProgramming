@@ -5,6 +5,5 @@ public class Game
         Protogame pg = new Protogame();
         pg.initialize();
         pg.loop();
-        
     }
 }

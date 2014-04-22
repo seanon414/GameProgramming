@@ -16,12 +16,12 @@ public class Protogame extends JFrame implements KeyListener
 
     // create sprites for use in game.
     Sprite background;
-    Sprite ship;
+    Sprite submarine;
 
     ArrayList<Integer> activeKeys = new ArrayList<Integer>();
 
-    // create a bunch of star Sprites
-    ArrayList<Sprite> starList = new ArrayList<Sprite>();
+    // create a bunch of mine Sprites
+    ArrayList<Sprite> mineList = new ArrayList<Sprite>();
     
     // initialize : () -> void
     //  sets up parameters for the appearance of the window.
@@ -35,7 +35,7 @@ public class Protogame extends JFrame implements KeyListener
         setSize(640,480);
 
         // text that goes in title bar
-        setTitle("Stemkoski's Awesome Game of Awesomeness!");
+        setTitle("Sean and Mik's Game With Blue Stuff!");
 
         // display the window
         setVisible( true );
@@ -47,30 +47,34 @@ public class Protogame extends JFrame implements KeyListener
         grapher = layout.createGraphics();
 
         background = new Sprite();
-        background.setImage("underwater-bubbles.jpg");
+        background.setImage("ocean.png");
 
-        ship = new Sprite();
-        ship.setName("Enterprise");
-        ship.setPosition(100,100);
-        ship.setImage("submarine.png");
-        ship.setVelocity(50,0); // pixels per second.
-        ship.setAngle(2);
+        submarine = new Sprite();
+        submarine.setName("Enterprise");
+        submarine.setPosition(100,100);
+        submarine.setImage("submarine.png");
+        submarine.setVelocity(50,0); // pixels per second.
+        submarine.setAngle(2);
 
-        Random randy = new Random();
+        
         
         for (int i = 0; i < 10; i++)
         {
-            Sprite star = new Sprite();
-            star.setImage("star.png");
-            int x = randy.nextInt(640);
-            int y = randy.nextInt(480);
-            star.setPosition(x,y);
-            starList.add(star);
+            spawnMine();
         }
         
         addKeyListener(this);
     }
-
+    
+    public void spawnMine(){
+        Random randy = new Random();
+        Sprite mine = new Sprite();
+        mine.setImage("mine2.png");
+        int x = randy.nextInt(620);
+        int y = randy.nextInt(460);
+        mine.setPosition(x,y);
+        mineList.add(mine);
+    }
     // loop : () -> void
     //  repeats update (event sheet) and render (layout) methods
     public void loop()
@@ -95,36 +99,38 @@ public class Protogame extends JFrame implements KeyListener
     public void update()
     {
         if ( activeKeys.contains(KeyEvent.VK_UP) )
-            if(ship.getSpeed() > 250)
-                ship.setSpeed( ship.getSpeed());
+            if(submarine.getSpeed() > 250)
+                submarine.setSpeed( submarine.getSpeed());
             else
-                ship.setSpeed( ship.getSpeed() + 5 );
+                submarine.setSpeed( submarine.getSpeed() + 5 );
         if ( activeKeys.contains(KeyEvent.VK_DOWN) )
-            ship.setSpeed( 0.95 * ship.getSpeed() );
+            submarine.setSpeed( 0.95 * submarine.getSpeed() );
         if ( activeKeys.contains(KeyEvent.VK_LEFT) )
-            ship.addAngle( -3.0 );
+            submarine.addAngle( -3.0 );
         if ( activeKeys.contains(KeyEvent.VK_RIGHT) )
-            ship.addAngle( 3.0 );
+            submarine.addAngle( 3.0 );
 
-        ship.update( 0.017 );
-        ship.wrap(640,480);
+        submarine.update( 0.017 );
+        submarine.wrap(640,480);
         
-        for (Sprite star : starList)
+        for (Sprite mine : mineList)
         {
-            star.update(0.017);
+            mine.update(0.017);
             
-            if (star.overlaps(ship))
-                star.destroyed = true;
+            if (mine.overlaps(submarine))
+                mine.destroyed = true;
         }
         
         // when removing items from a list,
         //  need to go through list backwards because the items
         //  automatically reposition themselves when something is removed
         //  and we must avoid skipping items & going past the end of the list
-        for (int n = starList.size() - 1; n >= 0; n -= 1)
+        for (int n = mineList.size() - 1; n >= 0; n -= 1)
         {
-            if ( starList.get(n).destroyed ) 
-                starList.remove(n);   
+            if ( mineList.get(n).destroyed ){ 
+                mineList.remove(n);
+                spawnMine();
+            }
         }  
     }
 
@@ -133,12 +139,12 @@ public class Protogame extends JFrame implements KeyListener
     {
         background.render(grapher);
 
-        for (Sprite star : starList)
+        for (Sprite mine : mineList)
         {
-            star.render(grapher);
+            mine.render(grapher);
         }
         
-        ship.render(grapher);
+        submarine.render(grapher);
 
         // calls paint method at next available opportunity
         repaint();
