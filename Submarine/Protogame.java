@@ -30,7 +30,7 @@ public class Protogame extends JFrame implements KeyListener
     int WIDTH = 640;
     int HEIGHT = 480;
     
-    // Global score variable
+    // Global variables
     int score = 0;
     
     // initialize : () -> void
@@ -66,7 +66,7 @@ public class Protogame extends JFrame implements KeyListener
         submarine.setVelocity(50,0); // pixels per second.
         submarine.setAngle(2);
         
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 15; i++)
         {
             spawnMine();
         }
@@ -78,9 +78,12 @@ public class Protogame extends JFrame implements KeyListener
         Random randy = new Random();
         Sprite mine = new Sprite();
         mine.setImage("mine2.png");
-        int x = randy.nextInt(620);
-        int y = randy.nextInt(460);
+        int x = randy.nextInt(620) + 20;
+        int y = randy.nextInt(460) + 20;
+        int angle = randy.nextInt(360);
         mine.setPosition(x,y);
+        mine.setAngle(angle);
+        mine.setVelocity(50, 50);
         if (!mine.overlaps(submarine))
             mineList.add(mine);
         else
@@ -174,9 +177,6 @@ public class Protogame extends JFrame implements KeyListener
         Font stylish = new Font("Times New Roman", Font.BOLD, 30);
         grapher.setFont( stylish );
         
-        String score_message = "Score: " + score;
-        grapher.drawString(score_message, 20, 60);
-
         for (Sprite mine : mineList)
             mine.render(grapher);
         
@@ -189,6 +189,9 @@ public class Protogame extends JFrame implements KeyListener
         }
         else
             submarine.render(grapher);
+            
+        String score_message = "Score: " + score;
+        grapher.drawString(score_message, 20, 60);
             
         // calls paint method at next available opportunity
         repaint();
